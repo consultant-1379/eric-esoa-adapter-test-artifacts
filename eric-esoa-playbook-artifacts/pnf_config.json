@@ -1,0 +1,4 @@
+{
+ "adminState": "{{ administrativeState }}",
+ "operState": "{{ operationalState }}"
+}

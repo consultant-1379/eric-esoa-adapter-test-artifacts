@@ -1,0 +1,5 @@
+{
+  "vnfProfileId": "vnfProfileId",
+  "vnfInstanceName": "{{ name }}",
+  "vnfInstanceDescription": "vnf1InstanceDescription"
+}

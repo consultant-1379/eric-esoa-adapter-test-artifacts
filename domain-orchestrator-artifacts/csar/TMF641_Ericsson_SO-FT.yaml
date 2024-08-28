@@ -1,0 +1,62 @@
+tosca_definitions_version: tosca_simple_yaml_1_3
+
+description: >
+  SO service template that models service creation and deletion using TMF641
+
+imports:
+  # Import the CTS type definitions
+  - common-topology-types.yaml
+
+metadata:
+  category: E2E Service
+  serviceType: NSI
+
+topology_template:
+  inputs:
+    service_name:
+      type: string
+      required: false
+      description: The name to be given to the service.
+      default: "MNaaS"
+    coreFunction:
+      type: string
+      required: false
+      description: coreFunction.
+      default: "ceSdwanRouting"
+    deviceType:
+      type: string
+      required: false
+      description: deviceType.
+      default: "router"
+    serviceTier:
+      type: string
+      required: false
+      description: serviceTier.
+      default: "basic"
+
+  node_templates:
+    managedDevice:
+      type: topology.nodes.ctv.virtNetworkServ
+      directives: [ instantiate ]
+      properties:
+        name: { concat: [ get_input: service_name, '--ManagedDevice'] }
+        'NSTMF641::jinjaFile': "Jinja_TMF641_EricssonSO-v1"
+
+        'Cloud_CaaS::coreFunction': {get_input: coreFunction}
+
+        'Cloud_CaaS::deviceType': {get_input: deviceType}
+
+        'Cloud_CaaS::serviceTier': {get_input: serviceTier}
+
+        resourceType: "NetworkService"
+        'SO_RESOURCE::resourceType': "NetworkService"
+
+      interfaces:
+        Standard:
+          create:
+            implementation: 'camunda/so-sbi'
+          delete:
+            implementation: 'camunda/so-sbi'
+        Modify:
+          modify:
+            implementation: 'camunda/so-sbi'

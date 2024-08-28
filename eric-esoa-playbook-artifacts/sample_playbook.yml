@@ -1,0 +1,27 @@
+- hosts: localhost
+  connection: local
+  vars:
+    subsystem_host: "{{ hostvars[subsystem_name]['ansible_host']}}"
+    subsystem_user: "{{ hostvars[subsystem_name]['ansible_user'] }}"
+    subsystem_password: "{{ hostvars[subsystem_name]['ansible_ssh_pass'] }}"
+  tasks:
+  - name: Check subsystem
+    fail:
+      msg: "Subsystem is not defined"
+    when: subsystem_host is undefined or subsystem_user is undefined or subsystem_password is undefined
+  - name: Check extra-var is accessible
+    fail: 
+      msg: "Variable 'input1' is not defined"
+    when: input1 is undefined
+  - name: Read configuration template file
+    shell: cat "{{ pnfConfig }}"
+    register: template_contents
+  - name: Convert configuration template to json
+    set_fact:
+      template_json: "{{ template_contents.stdout | from_json }}"
+  - debug:
+      var: template_json
+  - name: Check variable in config template is substituted
+    fail:
+      msg: "Variable is not substituted"
+    when: template_json['adminState'] != "UNLOCKED"

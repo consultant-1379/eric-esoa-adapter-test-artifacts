@@ -1,0 +1,126 @@
+tosca_definitions_version: tosca_simple_yaml_1_3
+
+description: |
+  Service Template to verify playbook opertion for physical node.
+  The Router node has a reference to a subsystem whose name is passed as an input.
+  The Router and subsystem are selected if existing, otherwise are instantiated.  
+  Sample playbook performs the following:
+    - check extra-vars are accessible in the playbook
+    - check config template is accessible in the template
+    - check href is substituted in the config template with value from the resource context
+    - check subsystem is accessible in the template. performs login request to enm-stub using the subsystem connection details.
+  
+imports:
+  - common-topology-types.yaml  
+  
+metadata:
+
+  serviceType: MyServiceType
+  serviceFunction: MyServiceFunction
+  serviceRole: MyServiceRole
+
+data_types:
+
+  com.ericsson.so.datatypes.PlaybookInputs:
+    derived_from: tosca.datatypes.Root
+    properties:
+        extra-vars:
+            type: map
+            entry_schema: string
+            required: false
+        become: 
+            type: string
+            required: false
+        become_user:
+           type: string
+           required: false
+        additional_subsystems:
+            type: list
+            entry_schema: string
+            required: false
+        other-args:
+           type: map
+           entry_schema: string
+           required: false
+
+artifact_types:
+  com.ericsson.so.artifacts.Implementation.Playbook:
+    derived_from: tosca.artifacts.Implementation
+    description: Playbook Artifact used as the implementation artifact
+    file_ext: [ yml, yaml, zip ]
+    properties:
+      entry_playbook:
+        type: string 
+        
+topology_template:
+
+    inputs:
+
+      node_name:
+        type: string
+      subsystem_name:
+        type: string
+      connection_name:
+        type: string
+      entry_playbook: 
+        type: string
+      # playbook_inputs:
+        # type: com.ericsson.so.datatypes.PlaybookInputs
+        # default: 
+          # extra-vars:
+            # destination_directory: /opt/script/config 
+            # key1: value1
+          # become: ""
+          # become_user: admin
+          # additional_subsystems: ["enm"]        
+
+    node_templates:
+    
+   
+        Subsystem:
+          type: topology.nodes.ctc.subsystemRef
+          directives: [ select, instantiate ]
+          properties:
+            name: { get_input: subsystem_name }
+            accessId: { get_input: connection_name }
+          node_filter:
+            properties:
+              - name: { equal: {get_input: subsystem_name} }  
+              
+        Router:
+          type: topology.nodes.ctl3.l3Node
+          properties:
+            name:  { get_input: node_name }
+            type: "PE Router"
+            status: "Operating"
+            administrativeState: "UNLOCKED"
+            operationalState: "TESTING"
+            'SO_RESOURCE::customTemplates': [
+              {
+                "name": "pnfConfigTemplate",
+                "catalogRef": "pnfConfig"
+              }
+           ]
+          requirements:
+            -  subsystemReferences: Subsystem
+          interfaces:
+            Standard:
+              configure:
+                implementation:
+                  primary: 
+                    type: com.ericsson.so.artifacts.Implementation.Playbook
+                    file: sample_playbook
+                    artifact_version: "1.0"
+                    properties:
+                      entry_playbook: sample_playbook.yml
+                      #entry_playbook: { get_input: entry_playbook }
+                inputs:
+                  #playbook_inputs: { get_input: playbook_inputs } # Complex inputs not supported yet via UI/TMF-Agent
+                  playbook_inputs: 
+                        extra-vars:
+                          input1: "value1"
+                        destination_directory: "/opt/script/config"
+                        become: ""
+                        become_user: "admin"
+                        additional_subsystems: [] 
+           

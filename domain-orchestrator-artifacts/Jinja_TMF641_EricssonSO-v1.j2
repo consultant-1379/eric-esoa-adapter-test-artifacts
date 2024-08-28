@@ -1,0 +1,235 @@
+{
+    "SBI": {
+        "createBody": {
+            "serviceOrderItem": [
+                {
+                    "id": "__randomUUID()",
+                    "action": "add",
+                    "service": {
+                        "name": "MNaaS Managed Device",
+                        "description": "Managed Device on the MNaaS Platform",
+                        "state": "active",
+                        "place": [
+                            {
+                                "id": "160455421",
+                                "name": "adborId",
+                                "role": "InstallationAddress",
+                                "__type": "PlaceRef",
+                                "__referredType": "GeographicAddress"
+                            }
+                        ],
+                        "serviceSpecification": {
+                            "id": "7179f3d3-8945-484b-ab81-b568ebc2afca",
+                            "href": "serviceCatalogManagement/v4/serviceSpecification/managedDevice/7179f3d3-8945-484b-ab81-b568ebc2afca"
+                        },
+                        "relatedParty": [
+                            {
+                                "id": "6510320988",
+                                "role": "Customer",
+                                "__referredType": "Customer",
+                                "__type": "Customer"
+                            }
+                        ],
+                        "serviceRelationship": [
+                            {
+                                "service": {
+                                    "id": "e26205f4-e144-4ded-9e64-82ede0b26e99",
+                                    "href": "activationAndConfiguration/v4/service/managedTenancy/e26205f4-e144-4ded-9e64-82ede0b26e99"
+                                },
+                                "relationshipType": "dependencyOn"
+                            }
+                        ],
+                        "serviceCharacteristic": [
+                            {
+                                "name": "coreFunction",
+                                "value": "{{ context.Cloud_CaaS__coreFunction }}"
+                            },
+                            {
+                                "name": "deviceType",
+                                "value": "{{ context.Cloud_CaaS__deviceType }}"
+                            },
+                            {
+                                "name": "serviceTier",
+                                "value": "{{ context.Cloud_CaaS__serviceTier }}"
+                            },
+                            {
+                                "name": "managementDomainProfile",
+                                "value": {
+                                    "technicalContactName": "Stephen Glass",
+                                    "technicalContactEmail": "sglass@juktmicronics.com",
+                                    "lteMode": "active"
+                                }
+                            },
+                            {
+                                "name": "sku",
+                                "value": [
+                                    {
+                                        "sku": "VC-510LTE-AP-HO-12-P",
+                                        "type": "Part"
+                                    },
+                                    {
+                                        "sku": "VC100M-ENT-HO-SG-L34S1-12P",
+                                        "type": "License"
+                                    },
+                                    {
+                                        "sku": "VC-EDG-NDD-510LTE-AP-UPG-12P",
+                                        "type": "Maintenance"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+        "deleteBody": {
+            "description": "delete southbound service",
+            "category": "",
+            "serviceOrderItem": [
+                {
+                    "action": "delete",
+                    "id": "__randomUUID()",
+                    "service": {
+                        "id": "{{ context.southboundServiceId }}",
+                        "name": "{{ context.southboundServiceName }}"
+                    }
+                }
+            ]
+        },
+        "modifyBody": {
+            "serviceOrderItem": [
+                {
+                    "id": "__randomUUID()",
+                    "action": "modify",
+                    "service": {
+                        "name": "MNaaS Managed Device",
+                        "description": "Managed Device on the MNaaS Platform",
+                        "state": "active",
+                        "place": [
+                            {
+                                "id": "160455421",
+                                "name": "adborId",
+                                "role": "InstallationAddress",
+                                "__type": "PlaceRef",
+                                "__referredType": "GeographicAddress"
+                            }
+                        ],
+                        "serviceSpecification": {
+                            "id": "7179f3d3-8945-484b-ab81-b568ebc2afca",
+                            "href": "serviceCatalogManagement/v4/serviceSpecification/managedDevice/7179f3d3-8945-484b-ab81-b568ebc2afca"
+                        },
+                        "relatedParty": [
+                            {
+                                "id": "6510320988",
+                                "role": "Customer",
+                                "__referredType": "Customer",
+                                "__type": "Customer"
+                            }
+                        ],
+                        "serviceRelationship": [
+                            {
+                                "service": {
+                                    "id": "e26205f4-e144-4ded-9e64-82ede0b26e99",
+                                    "href": "activationAndConfiguration/v4/service/managedTenancy/e26205f4-e144-4ded-9e64-82ede0b26e99"
+                                },
+                                "relationshipType": "dependencyOn"
+                            }
+                        ],
+                        "serviceCharacteristic": [
+                            {
+                                "name": "coreFunction",
+                                "value": "{{ modifiedContext.Cloud_CaaS__coreFunction }}"
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+        "SBIproperties": {
+            "systemName": "NaaS",
+            "polling_interval": 2,
+            "max_polling_retries": 200,
+            "timeout": 3000,
+            "methods": {
+                "create": {
+                    "method": "POST",
+                    "url": "__fromSystem(URL)/serviceOrdering/v4/serviceOrder/managedDevice",
+                    "body": "__fromJSON(createBody)",
+                    "response_parser": {
+                        "deviceId": ".id",
+                        "deviceHref": ".href",
+                        "state": ".state",
+                        "serviceOrderItem": ".serviceOrderItem"
+                    },
+                    "response_ok": "checkResponses('__fromResponse(deviceId)',[])",
+                    "response_fail": "checkResponses('__fromResponse(deviceId)',[])",
+                    "outputs": {
+                        "deviceId": "deviceId",
+                        "deviceHref": "deviceHref",
+                        "TMF641serviceOrderItem": "serviceOrderItem"
+                    }
+                },
+                "polling_create": {
+                    "method": "GET",
+                    "url": "__fromSystem(URL)/serviceOrdering/v4/serviceOrder/managedDevice/__fromResponse(deviceId)",
+                    "response_parser": {
+                        "id": ".id",
+                        "state": ".state"
+                    },
+                    "response_ok": "checkResponses('__fromResponse(state)',['completed'])",
+                    "response_progress": "checkResponses('__fromResponse(state)',['inprogress','inProgress','acknowledged','assessing'])",
+                    "response_fail": "checkResponses('__fromResponse(state)',['Failed','failed'])"
+                },
+                "delete": {
+                    "method": "POST",
+                    "url": "__fromSystem(URL)/serviceOrdering/v4/serviceOrder/managedDevice",
+                    "body": "__fromJSON(deleteBody)",
+                    "response_parser": {
+                        "state": ".state"
+                    },
+                    "response_ok": "checkResponses('__fromResponse(state)',['completed','Completed','acknowledged','inProgress'])",
+                    "response_fail": "checkResponses('__fromResponse(state)',['Failed','failed'])",
+                    "response_progress": "checkResponses('__fromResponse(state)',['inprogress','inProgress','acknowledged','assessing'])"
+                },
+                "modify": {
+                    "method": "POST",
+                    "url": "__fromSystem(URL)/serviceOrdering/v4/serviceOrder/managedDevice",
+                    "body": "__fromJSON(modifyBody)",
+                    "response_parser": {
+                        "deviceId": ".id",
+                        "deviceHref": ".href",
+                        "state": ".state",
+                        "serviceOrderItem": ".serviceOrderItem"
+                    },
+                    "response_ok": "checkResponses('__fromResponse(deviceId)',[])",
+                    "response_fail": "checkResponses('__fromResponse(deviceId)',[])",
+                    "outputs": {
+                        "deviceId": "deviceId",
+                        "deviceHref": "deviceHref",
+                        "TMF641serviceOrderItem": "serviceOrderItem"
+                    }
+                },
+                "polling_modify": {
+                    "method": "GET",
+                    "url": "__fromSystem(URL)/serviceOrdering/v4/serviceOrder/managedDevice/__fromResponse(deviceId)",
+                    "response_parser": {
+                        "id": ".id",
+                        "state": ".state"
+                    },
+                    "response_ok": "checkResponses('__fromResponse(state)',['completed'])",
+                    "response_progress": "checkResponses('__fromResponse(state)',['inprogress','inProgress','acknowledged','assessing'])",
+                    "response_fail": "checkResponses('__fromResponse(state)',['Failed','failed'])"
+                }
+            },
+            "headers": {
+                "X-Correlation-ID": "__randomUUID()",
+                "X-Latest-Version": "v4.1.0",
+                "X-Service-Version": "v3.0.0",
+                "X-Group-ID": "ePilot",
+                "Authorization": "Bearer __fromSystem(access_token)",
+                "Content-Type": "application/json",
+                "Accept": "*/*"
+            }
+        }
+    }
+}

@@ -1,0 +1,44 @@
+# Eclipse
+.classpath
+.project
+.settings/
+
+# Intellij
+.idea/
+*.iml
+*.iws
+
+# Mac
+.DS_Store
+
+# Maven
+log/
+target/
+reports
+helm-home/
+helm-target/
+.m2/
+
+# ARQ tests
+
+# PMD
+*.pmd
+
+#Generated files
+*.ser
+
+# Merge files
+*.orig
+
+# Archetype support files
+install_bob.sh
+run.sh
+
+# Sonar
+.sonar/
+
+# TestContainers
+.testcontainers.properties
+
+#so-ci
+.bob/

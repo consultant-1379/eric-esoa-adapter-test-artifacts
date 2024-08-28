@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ ~ COPYRIGHT Ericsson 2023-2024
+ ~
+ ~
+ ~
+ ~ The copyright to the computer program(s) herein is the property of
+ ~
+ ~ Ericsson Inc. The programs may be used and/or copied only with written
+ ~
+ ~ permission from Ericsson Inc. or in accordance with the terms and
+ ~
+ ~ conditions stipulated in the agreement/contract under which the
+ ~
+ ~ program(s) have been supplied.
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.ericsson.oss.orchestration.so</groupId>
+    <artifactId>so-master</artifactId>
+    <version>3.0.50</version>
+    <relativePath/>
+  </parent>
+  <groupId>com.ericsson.bos.esoa</groupId>
+  <artifactId>eric-esoa-adapter-test-artifacts</artifactId>
+  <version>0.0.1-1-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <modules>
+    <module>eric-esoa-ecmsol005-artifacts</module>
+    <module>domain-orchestrator-artifacts</module>
+    <module>eric-esoa-playbook-artifacts</module>
+  </modules>
+
+</project>

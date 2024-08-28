@@ -1,0 +1,264 @@
+tosca_definitions_version: tosca_simple_yaml_1_3
+
+description: |
+  This is a sample Service Template to test creation of a NetworkService in the NFVO via sol005-adapter and configure/reconfigure the NetworkFunctions in ENM via enm-adapter.
+     - Service Template contains supported input value types (string, boolean, integer, list, map).
+     - Service Template contains node properties and operation inputs with value types
+       (string, boolean, integer, list, map).
+     - Service Template contains node properties using get_input, get_property and get_attribute functions.
+     - Service Template contains operation inputs using get_input, get_property and get_attribute functions.
+     - Service Template contains get_attribute functions targeting node which is orchestrated.
+     - Service Template contains get_attribute functions targeting node which is not orchestrated
+     - Service Template contains sevice outputs.
+
+imports:
+  # Import the CTS type definitions
+  - common-topology-types.yaml
+
+metadata:
+  serviceType: MyServiceType
+  serviceFunction: MyServiceFunction
+  serviceRole: MyServiceRole
+
+topology_template:
+
+    inputs:
+      ns_name:
+        type: string
+        default: 'ns_1'
+      vnf_1_name:
+        type: string
+        default: 'vnf_1'
+      vnf_2_name:
+        type: string
+        default: 'vnf_2'
+      nsdId:
+        type: string
+        default: 'nsdId-1'
+      site:
+        type: string
+        default: "site_1"
+      vimZone:
+        type: string
+        default: 'vimZone_1'
+      subsystem:
+       type: string
+       default: 'sol005'
+      connection:
+       type: string
+       default: 'connection1'
+      network_name:
+        type: string
+        default: 'ipNetwork_1'
+      intInput1:
+        type: integer
+      booleanInput1:
+        type: boolean
+        required: false
+      listInput1:
+        type: list
+        entry_schema:
+          type: string
+      mapInput1:
+        type: map
+        entry_schema:
+          type: string
+      reconfigTemplateName:
+        type: string
+        metadata:
+          workflows: reconfigure
+      reconfigStringInput1:
+        type: string
+        metadata:
+          workflows: reconfigure
+
+    node_templates:
+
+        geoSite:
+          type: topology.nodes.ctg.geographicSite
+          directives: [ select, instantiate ]
+          node_filter:
+              properties:
+                    - name: { equal: {get_input: site}  }
+          properties:
+            name: {get_input: site}
+            type: 'Data Center'
+            status: 'planning'
+
+        # Select an existing vimZone based on name, else create
+        vimZone:
+            type: topology.nodes.ctv.vimZone
+            directives: [ select, instantiate ]
+            node_filter:
+                properties:
+                    - name: { equal: {get_input: vimZone}  }
+            properties:
+              name: {get_input: vimZone}
+              type: 'Ericsson - Cloud Execution Environment (CEE)'
+              status: 'operating'
+            requirements:
+              - geographicSite: geoSite
+
+        # Select an existing subsystem based on name, else create.
+        # The name should match the NFVO subsystem configured in SO.
+        nsSubsystem:
+            type: topology.nodes.ctc.subsystemRef
+            directives: [ select, instantiate ]
+            node_filter:
+                properties:
+                    - name: { equal: {get_input: subsystem} }
+                    - accessId: { equal: {get_input: connection} } 
+            properties:
+              name: {get_input: subsystem}
+              accessId: {get_input: connection}
+              status: 'operating'
+
+        networkService:
+            type: topology.nodes.ctv.virtNetworkServ
+            properties:
+                name:  { get_input: ns_name }
+                'SO_RESOURCE::resourceType': 'NetworkService'
+                'SO_NS::nsdId':   { get_input: nsdId }
+                'SO_NS::vdcId': ''
+                description:  'NetworkService'
+                'SO_RESOURCE::customOperations': []
+                'SO_RESOURCE::customTemplates': [
+                    # additionalParamsForNs passed in NFVO request
+                    {
+                      "name": "additionalParamsForNsTemplate",
+                      "catalogRef": "additionalParamsForNs_v1" # this should match the name of the template in the Catalog Manager
+                    },
+                    # day1 template with ENM configuration
+                    {
+                      "name": "day1ConfigTemplate",
+                      "catalogRef": "day1Config_v1"
+                    }
+                ]
+                # stringProp1 will be evaluated by ESD since it does not contain get_attribute. node property value in service instance will be set to evaluated value.
+                'SO_NS::stringProp1': { concat: [{ get_property: [nsSubsystem, name] }, { get_input: "connection" }] }
+                # stringProp2 will not be evaluated by ESD since contains get_attribute. node property value in service instance will be set to this value in the template.
+                'SO_NS::stringProp2': { concat: [{ get_property: [nsSubsystem, name] }, { get_input: "connection" }, { get_attribute: [vimZone, name] }] }
+                # intProp1 will be evaluated by ESD.
+                'SO_NS::intProp1': { get_input: "intInput1" }
+                # booleanProp1 will be evaluated by ESD.
+                'SO_NS::booleanProp1': { get_input: "booleanInput1" }
+                # listProp1 will not be evaluated by ESD since contains get_attribute. node property value in service instance will be set to this value in the template.
+                'SO_NS::listProp1': [{ get_input: "connection" }, { get_property: [nsSubsystem, name] }, { get_attribute: [vimZone, name] } ]
+                'SO_NS::listProp2': { get_input: "listInput1" }
+                # mapProp1 will not be evaluated by ESD since contains get_attribute. node property value in service instance will be set to this value in the template.
+                'SO_NS::mapProp1': { "key1": { get_input: "connection" }, "key2": { get_property: [nsSubsystem, name] }, "key3": { get_attribute: [vimZone, name] } }
+                'SO_NS::mapProp2': { get_input: "mapInput1" }
+            interfaces:
+               Standard:
+                   create:
+                       implementation: 'workflow/nsCreate'
+                   delete:
+                       implementation: 'workflow/nsDelete'
+
+            requirements:
+                - subsystemReferences: nsSubsystem   # reference to the NFVO subsystem where the service is to be created.
+
+        vnf_1:
+            type: topology.nodes.ctv.vnf
+            properties:
+                name: { get_input: vnf_1_name }
+                'SO_RESOURCE::resourceType': 'NetworkFunction'
+                'SO_RESOURCE::customOperations': []
+                'SO_RESOURCE::customTemplates': [
+                    {
+                      "name": "additionalParamsForVnfTemplate",
+                      "catalogRef": "additionalParamsForVnf_v1"
+                    }
+                ]
+                'SO_VNF::vnfStringProp1': { get_attribute: [networkService, 'SO_NS::stringProp2']}
+                'SO_VNF::vnfIntProp1': { get_attribute: [networkService, 'SO_NS::intProp1']}
+                'SO_VNF::vnfBooleanProp1': { get_attribute: [networkService, 'SO_NS::booleanProp1']}
+                'SO_VNF::vnfListProp1': { get_attribute: [networkService, 'SO_NS::listProp1']}
+                'SO_VNF::vnfListProp2': ["value1", { get_attribute: [networkService, 'SO_NS::stringProp2']}]
+                'SO_VNF::vnfMapProp1': { get_attribute: [networkService, 'SO_NS::mapProp1']}
+                'SO_VNF::vnfMapProp2': { key1: "value1", key2: { get_attribute: [networkService, 'SO_NS::stringProp2']}}
+
+            interfaces:
+               Standard:
+                   create:
+                       implementation: 'workflow/verifyOperationInputs'
+                       inputs:
+                         # verify get_input functions are evaluated
+                         input1: { get_input: "vnf_1_name" }
+                         input2: { get_input: "intInput1" }
+                         input3: { get_input: "booleanInput1" }
+                         input4: { get_input: "listInput1" }
+                         input5: { get_input: "mapInput1" }
+                         # verify get_property targeting source node is evaluated
+                         input6: { get_property: [networkService, 'SO_NS::listProp1'] }
+                         input7: { get_property: [networkService, 'SO_NS::mapProp1'] }
+                         # verify get_property targeting other node is evaluated
+                         input8: { get_property: [nsSubsystem, name] }
+                         # verify concat functions using get_input, get_property and get_attribute are evaluated
+                         input9: { concat: [{ get_input: "vnf_1_name" }, '-', { get_input: "vimZone" }] }
+                         input10: { concat: [{ get_input: "vnf_1_name" }, '-', { get_property: [nsSubsystem, name] }] }
+                         input11: { concat: [{ get_input: "vnf_1_name" }, '-', { get_attribute: [networkService,'SO_NS::stringProp2'] }] }
+                         input12: { concat: [{ get_property: [nsSubsystem, name] }, '-', { get_attribute: [networkService, 'SO_NS::stringProp2'] }] }
+                         # verify maps using get_input, get_property and get_attribute are evaluated
+                         # bug in ESD, raw value is set to {"get_attribute" : [ "nsSubsystem", "attr1" ]}
+                         # input13:
+                           # key1: { get_input: "vnf_1_name" }
+                           # key2: { get_property: [nsSubsystem, name] }
+                           # key3: { get_attribute: [networkService, 'SO_NS::stringProp2'] }
+                         # verify list using get_input, get_property and get_attribute are evaluated
+                         # bug in ESD, raw value is set to  [ "<aria_extension_tosca.simple_v1_3.modeling.functions.GetInput object at 0x7f430dc8d410>", "<aria_extension_tosca.simple_v1_3.modeling.functions.GetProperty object at 0x7f432c3258d0>", "<aria_extension_tosca.simple_v1_3.modeling.functions.GetAttribute object at 0x7f430fef9150>"
+                         # input14:
+                           # - { get_input: "vnf_1_name" }
+                           # - { get_property: [nsSubsystem, name] }
+                           # - { get_attribute: [networkService, 'GROUP1::prop1'] }
+                   delete:
+                       implementation: 'workflow/verifyOperationInputs'
+                       inputs:
+                         # verify get_input functions are evaluated
+                         input1: { get_input: "vnf_1_name" }
+                         input2: { get_input: "intInput1" }
+                         input3: { get_input: "booleanInput1" }
+                         input4: { get_input: "listInput1" }
+                         input5: { get_input: "mapInput1" }
+                         # verify get_property targeting source node is evaluated
+                         input6: { get_property: [networkService, 'SO_NS::listProp1'] }
+                         input7: { get_property: [networkService, 'SO_NS::mapProp1'] }
+                         # verify get_property targeting other node is evaluated
+                         input8: { get_property: [nsSubsystem, name] }
+                         # verify concat functions using get_input, get_property and get_attribute are evaluated
+                         input9: { concat: [{ get_input: "vnf_1_name" }, '-', { get_input: "vimZone" }] }
+                         input10: { concat: [{ get_input: "vnf_1_name" }, '-', { get_property: [nsSubsystem, name] }] }
+                         input11: { concat: [{ get_input: "vnf_1_name" }, '-', { get_attribute: [networkService,'SO_NS::stringProp2'] }] }
+                         input12: { concat: [{ get_property: [nsSubsystem, name] }, '-', { get_attribute: [networkService, 'SO_NS::stringProp2'] }] }
+                         # verify maps using get_input, get_property and get_attribute are evaluated
+                         # bug in ESD, raw value is set to {"get_attribute" : [ "nsSubsystem", "attr1" ]}
+                         # input13:
+                           # key1: { get_input: "vnf_1_name" }
+                           # key2: { get_property: [nsSubsystem, name] }
+                           # key3: { get_attribute: [networkService, 'SO_NS::stringProp2'] }
+                         # verify list using get_input, get_property and get_attribute are evaluated
+                         # bug in ESD, raw value is set to  [ "<aria_extension_tosca.simple_v1_3.modeling.functions.GetInput object at 0x7f430dc8d410>", "<aria_extension_tosca.simple_v1_3.modeling.functions.GetProperty object at 0x7f432c3258d0>", "<aria_extension_tosca.simple_v1_3.modeling.functions.GetAttribute object at 0x7f430fef9150>"
+                         # input14:
+                           # - { get_input: "vnf_1_name" }
+                           # - { get_property: [nsSubsystem, name] }
+                           # - { get_attribute: [networkService, 'GROUP1::prop1'] }
+            requirements:
+                - vimZone: vimZone  # reference to the vimZone which will be passed in request to NFVO.
+                - virtualNetServices: networkService  # reference to the associated NetworkService.
+
+        vnf_2:
+            type: topology.nodes.ctv.vnf
+            properties:
+                name: { get_input: vnf_2_name }
+                'SO_RESOURCE::resourceType': 'NetworkFunction'
+                'SO_RESOURCE::customOperations': []
+                'SO_RESOURCE::customTemplates': [
+                    # additionalParamsForVnf passed in NFVO request
+                    {
+                      "name": "additionalParamsForVnfTemplate",
+                      "catalogRef": "additionalParamsForVnf_v1"
+                    }
+                ]
+            requirements:
+                - vimZone: vimZone
+                - virtualNetServices: networkService

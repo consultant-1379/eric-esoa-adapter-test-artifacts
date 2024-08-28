@@ -1,0 +1,14 @@
+{
+  "vnfParams": [
+    {
+      "vnfNodeTemplateName" : "vnf1NodeTemplateName",
+      "vnfInstanceName": "{{ vnf_1.name }}",
+      "vimZoneName" : "{{ vimZone.name }}"
+    },
+     {
+      "vnfNodeTemplateName" : "vnf2NodeTemplateName",
+      "vnfInstanceName": "{{ vnf_2.name }}",
+      "vimZoneName" : "{{ vimZone.name }}"
+     }
+  ]
+ }
